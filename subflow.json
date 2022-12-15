@@ -1,0 +1,1188 @@
+{
+    "id": "8f6e4fae9d429e97",
+    "type": "subflow",
+    "name": "Crypto Storage",
+    "info": "",
+    "category": "CryptoRed",
+    "in": [],
+    "out": [],
+    "env": [
+        {
+            "name": "path",
+            "type": "str",
+            "value": "./store"
+        }
+    ],
+    "meta": {
+        "module": "node-red-contrib-crypto-storage",
+        "version": "0.0.1",
+        "author": "Thodoris Ioannidis <thodoris.ioannidis@inqbit.io>",
+        "desc": "This is a subflow node for encrypting and decrypting payloads and creating an ecrypted store on the specified folder utiling AES for block and Rabbit for stream ciphering.",
+        "keywords": "crypto, aes, rabbit, storage",
+        "license": "Apache-2.0"
+    },
+    "color": "#E9967A",
+    "icon": "font-awesome/fa-stop-circle",
+    "flow": [
+        {
+            "id": "e3da048308d061cd",
+            "type": "subflow",
+            "name": "Rabbit",
+            "info": "",
+            "category": "CryptoRed",
+            "in": [
+                {
+                    "x": 280,
+                    "y": 460,
+                    "wires": [
+                        {
+                            "id": "754e2123ccc9460a"
+                        }
+                    ]
+                }
+            ],
+            "out": [
+                {
+                    "x": 900,
+                    "y": 460,
+                    "wires": [
+                        {
+                            "id": "d838bd59e0ad2fc9",
+                            "port": 0
+                        },
+                        {
+                            "id": "b863017c477865ab",
+                            "port": 0
+                        }
+                    ]
+                }
+            ],
+            "env": [
+                {
+                    "name": "function",
+                    "type": "str",
+                    "value": "encrypt",
+                    "ui": {
+                        "icon": "font-awesome/fa-gears",
+                        "label": {
+                            "en-US": "Function"
+                        },
+                        "type": "select",
+                        "opts": {
+                            "opts": [
+                                {
+                                    "l": {
+                                        "en-US": "Encrypt"
+                                    },
+                                    "v": "encrypt"
+                                },
+                                {
+                                    "l": {
+                                        "en-US": "Decrypt"
+                                    },
+                                    "v": "decrypt"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "key",
+                    "type": "str",
+                    "value": "",
+                    "ui": {
+                        "icon": "font-awesome/fa-key",
+                        "label": {
+                            "en-US": "Key"
+                        },
+                        "type": "input",
+                        "opts": {
+                            "types": [
+                                "str"
+                            ]
+                        }
+                    }
+                }
+            ],
+            "meta": {},
+            "color": "#3FADB5",
+            "icon": "font-awesome/fa-ellipsis-h"
+        },
+        {
+            "id": "754e2123ccc9460a",
+            "type": "switch",
+            "z": "e3da048308d061cd",
+            "name": "FUNCTION",
+            "property": "function",
+            "propertyType": "env",
+            "rules": [
+                {
+                    "t": "eq",
+                    "v": "encrypt",
+                    "vt": "str"
+                },
+                {
+                    "t": "eq",
+                    "v": "decrypt",
+                    "vt": "str"
+                }
+            ],
+            "checkall": "true",
+            "repair": false,
+            "outputs": 2,
+            "x": 430,
+            "y": 460,
+            "wires": [
+                [
+                    "d838bd59e0ad2fc9"
+                ],
+                [
+                    "b863017c477865ab"
+                ]
+            ]
+        },
+        {
+            "id": "d838bd59e0ad2fc9",
+            "type": "function",
+            "z": "e3da048308d061cd",
+            "name": "ENCRYPT",
+            "func": "function encrypt(object,key){\n    return cryptoJs.Rabbit.encrypt(JSON.stringify(object),key).toString();\n}\n\nmessage = msg.payload.plaintext;\nlet ciphertext, key = msg.payload.key || env.get('key');\nciphertext = encrypt(message,key);\ndelete msg.payload.plaintext\nmsg.payload.ciphertext = ciphertext\n\nreturn msg;",
+            "outputs": 1,
+            "noerr": 0,
+            "initialize": "",
+            "finalize": "",
+            "libs": [
+                {
+                    "var": "cryptoJs",
+                    "module": "crypto-js"
+                }
+            ],
+            "x": 670,
+            "y": 420,
+            "wires": [
+                []
+            ]
+        },
+        {
+            "id": "b863017c477865ab",
+            "type": "function",
+            "z": "e3da048308d061cd",
+            "name": "DECRYPT",
+            "func": "function decrypt(encrypted,key){\n    bytes = cryptoJs.Rabbit.decrypt(encrypted,key);\n    return bytes.toString(cryptoJs.enc.Utf8);\n}\n\nmessage = msg.payload.ciphertext;\nlet plaintext, key = msg.payload.key || env.get('key');\nplaintext = decrypt(message,key);\ndelete msg.payload.ciphertext\nmsg.payload.plaintext = plaintext\n\nreturn msg;",
+            "outputs": 1,
+            "noerr": 0,
+            "initialize": "",
+            "finalize": "",
+            "libs": [
+                {
+                    "var": "cryptoJs",
+                    "module": "crypto-js"
+                }
+            ],
+            "x": 670,
+            "y": 480,
+            "wires": [
+                []
+            ]
+        },
+        {
+            "id": "fda40ddd2560b63d",
+            "type": "subflow",
+            "name": "AES",
+            "info": "This subflow implements the different capabilites for encrypting and decrypting a user provided JSON object with a secret key using the *Advanced Encryption Standard*. The subflow supports the following AES cipher modes:\n- CBC\n- CFB\n- CTR\n- OFB\n\n## *Encryption Mode*\nThis subflow allows for the encryption of plaintext message to encrypted ciphertexts using a user provided key.\n\n### Inputs\n>\n> **msg.*type***: \"encrypt\"\n>\n> **msg.*mode***: AES block cipher mode. \n>\n> **payload.*text***: Plaintext to encrypt.\n>\n> **payload.*key***: AES encryption key. \n>\n\n### Outputs\n>\n> **payload.*ciphertext***: The encrypted text.\n>\n\n## *Decryption Mode*\nThis subflow allows for the decryption of ciphertext message to a decrypted plaintext using a user provided key.\n\n### Inputs\n>\n> **msg.*type***: \"decrypt\"\n>\n> **msg.*mode***: AES block cipher mode. \n>\n> **payload.*ciphertext***: Plaintext to decrypt.\n>\n> **payload.*key***: AES decryption key. \n>\n\n### Outputs\n>\n> **payload.*plaintext***: The decrypted text.\n>",
+            "category": "CryptoRed",
+            "in": [
+                {
+                    "x": 200,
+                    "y": 380,
+                    "wires": [
+                        {
+                            "id": "e623e864e070b538"
+                        }
+                    ]
+                }
+            ],
+            "out": [
+                {
+                    "x": 780,
+                    "y": 380,
+                    "wires": [
+                        {
+                            "id": "4a0794ecf0809e38",
+                            "port": 0
+                        },
+                        {
+                            "id": "047435f1358b1bd1",
+                            "port": 0
+                        }
+                    ]
+                }
+            ],
+            "env": [
+                {
+                    "name": "function",
+                    "type": "str",
+                    "value": "encrypt",
+                    "ui": {
+                        "icon": "font-awesome/fa-gears",
+                        "label": {
+                            "en-US": "Function"
+                        },
+                        "type": "select",
+                        "opts": {
+                            "opts": [
+                                {
+                                    "l": {
+                                        "en-US": "Encrypt"
+                                    },
+                                    "v": "encrypt"
+                                },
+                                {
+                                    "l": {
+                                        "en-US": "Decrypt"
+                                    },
+                                    "v": "decrypt"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "mode",
+                    "type": "str",
+                    "value": "CBC",
+                    "ui": {
+                        "icon": "font-awesome/fa-gear",
+                        "label": {
+                            "en-US": "Mode"
+                        },
+                        "type": "select",
+                        "opts": {
+                            "opts": [
+                                {
+                                    "l": {
+                                        "en-US": "Cipher Block Chaining"
+                                    },
+                                    "v": "CBC"
+                                },
+                                {
+                                    "l": {
+                                        "en-US": "Cipher FeedBack"
+                                    },
+                                    "v": "CFB"
+                                },
+                                {
+                                    "l": {
+                                        "en-US": "Output FeedBack"
+                                    },
+                                    "v": "OFB"
+                                },
+                                {
+                                    "l": {
+                                        "en-US": "Counter"
+                                    },
+                                    "v": "CTR"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "key",
+                    "type": "str",
+                    "value": "",
+                    "ui": {
+                        "icon": "font-awesome/fa-key",
+                        "label": {
+                            "en-US": "Key"
+                        },
+                        "type": "input",
+                        "opts": {
+                            "types": [
+                                "str"
+                            ]
+                        }
+                    }
+                }
+            ],
+            "meta": {
+                "author": "Doth",
+                "desc": "AES encryption and decryption functionalities"
+            },
+            "color": "#3FADB5",
+            "icon": "font-awesome/fa-cubes"
+        },
+        {
+            "id": "4a0794ecf0809e38",
+            "type": "function",
+            "z": "fda40ddd2560b63d",
+            "name": "ENCRYPTION",
+            "func": "\nfunction encryptCBC(object,key){\n    return cryptoJs.AES.encrypt(JSON.stringify(object),key,{\n        mode: cryptoJs.mode.CBC\n    }).toString();\n}\n\nfunction encryptCFB(object,key){\n    return cryptoJs.AES.encrypt(JSON.stringify(object),key,{\n        mode: cryptoJs.mode.CFB\n    }).toString();\n}\n\nfunction encryptCTR(object,key){\n    return cryptoJs.AES.encrypt(JSON.stringify(object),key,{\n        mode: cryptoJs.mode.CTR\n    }).toString();\n}\n\nfunction encryptOFB(object,key){\n    return cryptoJs.AES.encrypt(JSON.stringify(object),key,{\n        mode: cryptoJs.mode.OFB\n    }).toString();\n}\n\nmessage = msg.payload.plaintext;\nlet ciphertext, mode = msg.payload.mode || env.get('mode'),key = msg.payload.key || env.get('key');\n\nswitch(mode){\n    case 'CBC':\n        ciphertext = encryptCBC(message, key)\n        break;\n    case 'CFB':\n        ciphertext = encryptCFB(message, key)\n        break;\n    case 'CTR':\n        ciphertext = encryptCTR(message, key)\n        break;\n    case 'OFB':\n        ciphertext = encryptOFB(message, key)\n        break;\n}\ndelete msg.payload.plaintext\nmsg.payload.enc = {\n    mode: mode,\n    ciphertext: ciphertext\n}\nreturn msg;\n",
+            "outputs": 1,
+            "noerr": 0,
+            "initialize": "",
+            "finalize": "",
+            "libs": [
+                {
+                    "var": "cryptoJs",
+                    "module": "crypto-js"
+                }
+            ],
+            "x": 560,
+            "y": 360,
+            "wires": [
+                []
+            ]
+        },
+        {
+            "id": "047435f1358b1bd1",
+            "type": "function",
+            "z": "fda40ddd2560b63d",
+            "name": "DECRYPTION",
+            "func": "function decryptCBC(cipher,key){\n        bytes = cryptoJs.AES.decrypt(cipher,key,{\n            mode: cryptoJs.mode.CBC \n        });\n        return bytes.toString(cryptoJs.enc.Utf8);\n}\nfunction decryptCFB(cipher,key){\n        bytes = cryptoJs.AES.decrypt(cipher,key,{\n            mode: cryptoJs.mode.CFB \n        });\n        return bytes.toString(cryptoJs.enc.Utf8);\n}\nfunction decryptCTR(cipher,key){\n        bytes = cryptoJs.AES.decrypt(cipher,key,{\n            mode: cryptoJs.mode.CTR \n        });\n        return bytes.toString(cryptoJs.enc.Utf8);\n}\nfunction decryptOFB(cipher,key){\n        bytes = cryptoJs.AES.decrypt(cipher,key,{\n            mode: cryptoJs.mode.OFB \n        });\n        return bytes.toString(cryptoJs.enc.Utf8);\n}\n\nmessage = msg.payload.ciphertext;\nlet plaintext, mode = msg.payload.mode || env.get('mode'), key =  msg.payload.key || env.get('key')\n\nswitch(mode){\n    case 'CBC':\n        plaintext = decryptCBC(message, key)\n        break;\n    case 'CFB':\n        plaintext = decryptCFB(message, key)\n        break;\n    case 'CTR':\n        plaintext = decryptCTR(message, key)\n        break;\n    case 'OFB':\n        plaintext = decryptOFB(message, key)\n        break;\n}\ndelete msg.payload.ciphertext\nmsg.payload.dec = {\n    mode: mode,\n    plaintext: plaintext\n}\nreturn msg;",
+            "outputs": 1,
+            "noerr": 0,
+            "initialize": "",
+            "finalize": "",
+            "libs": [
+                {
+                    "var": "cryptoJs",
+                    "module": "crypto-js"
+                }
+            ],
+            "x": 560,
+            "y": 420,
+            "wires": [
+                []
+            ]
+        },
+        {
+            "id": "e623e864e070b538",
+            "type": "switch",
+            "z": "fda40ddd2560b63d",
+            "name": "FUNCTION",
+            "property": "function",
+            "propertyType": "env",
+            "rules": [
+                {
+                    "t": "eq",
+                    "v": "encrypt",
+                    "vt": "str"
+                },
+                {
+                    "t": "eq",
+                    "v": "decrypt",
+                    "vt": "str"
+                }
+            ],
+            "checkall": "true",
+            "repair": false,
+            "outputs": 2,
+            "x": 330,
+            "y": 380,
+            "wires": [
+                [
+                    "4a0794ecf0809e38"
+                ],
+                [
+                    "047435f1358b1bd1"
+                ]
+            ]
+        },
+        {
+            "id": "7b4c2576f61a13ad",
+            "type": "http in",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "url": "/init",
+            "method": "post",
+            "upload": false,
+            "swaggerDoc": "",
+            "x": 200,
+            "y": 80,
+            "wires": [
+                [
+                    "e4556f9b4fbc56b2"
+                ]
+            ]
+        },
+        {
+            "id": "e4556f9b4fbc56b2",
+            "type": "http response",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "statusCode": "",
+            "headers": {},
+            "x": 410,
+            "y": 80,
+            "wires": []
+        },
+        {
+            "id": "929875524c256cb1",
+            "type": "file in",
+            "z": "8f6e4fae9d429e97",
+            "name": "READ",
+            "filename": "",
+            "format": "utf8",
+            "chunk": false,
+            "sendError": false,
+            "encoding": "none",
+            "allProps": false,
+            "x": 790,
+            "y": 240,
+            "wires": [
+                [
+                    "0e52707b0255feee"
+                ]
+            ]
+        },
+        {
+            "id": "ea1c83ea696e585a",
+            "type": "http in",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "url": "/blockStore",
+            "method": "post",
+            "upload": false,
+            "swaggerDoc": "",
+            "x": 200,
+            "y": 160,
+            "wires": [
+                [
+                    "0b8d4be8bced7d5e"
+                ]
+            ]
+        },
+        {
+            "id": "43babc6edb09b1e6",
+            "type": "subflow:fda40ddd2560b63d",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "x": 630,
+            "y": 80,
+            "wires": [
+                [
+                    "42713e6f218a0bc8"
+                ]
+            ]
+        },
+        {
+            "id": "f30b6b286824ff89",
+            "type": "http response",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "statusCode": "",
+            "headers": {},
+            "x": 1430,
+            "y": 140,
+            "wires": []
+        },
+        {
+            "id": "0b8d4be8bced7d5e",
+            "type": "switch",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "property": "payload.function",
+            "propertyType": "msg",
+            "rules": [
+                {
+                    "t": "eq",
+                    "v": "encrypt",
+                    "vt": "str"
+                },
+                {
+                    "t": "eq",
+                    "v": "decrypt",
+                    "vt": "str"
+                }
+            ],
+            "checkall": "true",
+            "repair": false,
+            "outputs": 2,
+            "x": 410,
+            "y": 160,
+            "wires": [
+                [
+                    "43babc6edb09b1e6"
+                ],
+                [
+                    "1d8543451ad34c13"
+                ]
+            ]
+        },
+        {
+            "id": "7aec1b80b2e8b4a0",
+            "type": "file",
+            "z": "8f6e4fae9d429e97",
+            "name": "STORE",
+            "filename": "",
+            "appendNewline": true,
+            "createDir": false,
+            "overwriteFile": "true",
+            "encoding": "none",
+            "x": 1180,
+            "y": 80,
+            "wires": [
+                [
+                    "f30b6b286824ff89"
+                ]
+            ]
+        },
+        {
+            "id": "dcc5473d480403df",
+            "type": "change",
+            "z": "8f6e4fae9d429e97",
+            "name": "SET KEY",
+            "rules": [
+                {
+                    "t": "move",
+                    "p": "key",
+                    "pt": "msg",
+                    "to": "payload.key",
+                    "tot": "msg"
+                }
+            ],
+            "action": "",
+            "property": "",
+            "from": "",
+            "to": "",
+            "reg": false,
+            "x": 620,
+            "y": 160,
+            "wires": [
+                [
+                    "e44c82671311e121"
+                ]
+            ]
+        },
+        {
+            "id": "0e52707b0255feee",
+            "type": "json",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "property": "payload",
+            "action": "obj",
+            "pretty": false,
+            "x": 950,
+            "y": 240,
+            "wires": [
+                [
+                    "dcc5473d480403df"
+                ]
+            ]
+        },
+        {
+            "id": "e44c82671311e121",
+            "type": "subflow:fda40ddd2560b63d",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "env": [
+                {
+                    "name": "function",
+                    "value": "decrypt",
+                    "type": "str"
+                }
+            ],
+            "x": 770,
+            "y": 160,
+            "wires": [
+                [
+                    "3855b020bda20b4e"
+                ]
+            ]
+        },
+        {
+            "id": "ebdc95a736a93f0f",
+            "type": "change",
+            "z": "8f6e4fae9d429e97",
+            "name": "SET RES",
+            "rules": [
+                {
+                    "t": "move",
+                    "p": "payload.dec.plaintext",
+                    "pt": "msg",
+                    "to": "payload",
+                    "tot": "msg"
+                }
+            ],
+            "action": "",
+            "property": "",
+            "from": "",
+            "to": "",
+            "reg": false,
+            "x": 1180,
+            "y": 140,
+            "wires": [
+                [
+                    "f30b6b286824ff89"
+                ]
+            ]
+        },
+        {
+            "id": "3855b020bda20b4e",
+            "type": "switch",
+            "z": "8f6e4fae9d429e97",
+            "name": "CHECK DECRYPTION",
+            "property": "payload.dec.plaintext",
+            "propertyType": "msg",
+            "rules": [
+                {
+                    "t": "nempty"
+                },
+                {
+                    "t": "empty"
+                }
+            ],
+            "checkall": "true",
+            "repair": false,
+            "outputs": 2,
+            "x": 970,
+            "y": 160,
+            "wires": [
+                [
+                    "ebdc95a736a93f0f"
+                ],
+                [
+                    "f494bfee64fcf317"
+                ]
+            ]
+        },
+        {
+            "id": "f494bfee64fcf317",
+            "type": "change",
+            "z": "8f6e4fae9d429e97",
+            "name": "SET RES",
+            "rules": [
+                {
+                    "t": "set",
+                    "p": "payload",
+                    "pt": "msg",
+                    "to": "{\"error\":\"Invalid Decryption Key Error!\"}",
+                    "tot": "json"
+                }
+            ],
+            "action": "",
+            "property": "",
+            "from": "",
+            "to": "",
+            "reg": false,
+            "x": 1180,
+            "y": 180,
+            "wires": [
+                [
+                    "f30b6b286824ff89"
+                ]
+            ]
+        },
+        {
+            "id": "42713e6f218a0bc8",
+            "type": "function",
+            "z": "8f6e4fae9d429e97",
+            "name": "SET FILE",
+            "func": "msg.filename = env.get('path') + \"/\" + msg.payload.filename;\nmsg.payload = msg.payload.enc\nreturn msg;",
+            "outputs": 1,
+            "noerr": 0,
+            "initialize": "",
+            "finalize": "",
+            "libs": [],
+            "x": 860,
+            "y": 80,
+            "wires": [
+                [
+                    "7aec1b80b2e8b4a0"
+                ]
+            ]
+        },
+        {
+            "id": "ea43cb9b1d8bd51c",
+            "type": "file in",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "filename": "",
+            "format": "utf8",
+            "chunk": false,
+            "sendError": false,
+            "encoding": "none",
+            "allProps": false,
+            "x": 760,
+            "y": 580,
+            "wires": [
+                [
+                    "31cf28e8557bbb0a"
+                ]
+            ]
+        },
+        {
+            "id": "7cc6c852d6c57507",
+            "type": "http in",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "url": "/streamStore",
+            "method": "post",
+            "upload": false,
+            "swaggerDoc": "",
+            "x": 210,
+            "y": 500,
+            "wires": [
+                [
+                    "5303872f7a801286"
+                ]
+            ]
+        },
+        {
+            "id": "42ebbaeee7aecde6",
+            "type": "http response",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "statusCode": "",
+            "headers": {},
+            "x": 1410,
+            "y": 480,
+            "wires": []
+        },
+        {
+            "id": "5303872f7a801286",
+            "type": "switch",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "property": "payload.function",
+            "propertyType": "msg",
+            "rules": [
+                {
+                    "t": "eq",
+                    "v": "encrypt",
+                    "vt": "str"
+                },
+                {
+                    "t": "eq",
+                    "v": "decrypt",
+                    "vt": "str"
+                }
+            ],
+            "checkall": "true",
+            "repair": false,
+            "outputs": 2,
+            "x": 390,
+            "y": 500,
+            "wires": [
+                [
+                    "f8471e6432632d1e"
+                ],
+                [
+                    "60805e6025d9ae09"
+                ]
+            ]
+        },
+        {
+            "id": "e9b47807eae52aac",
+            "type": "file",
+            "z": "8f6e4fae9d429e97",
+            "name": "STORE",
+            "filename": "",
+            "appendNewline": true,
+            "createDir": false,
+            "overwriteFile": "true",
+            "encoding": "none",
+            "x": 1140,
+            "y": 420,
+            "wires": [
+                [
+                    "42ebbaeee7aecde6"
+                ]
+            ]
+        },
+        {
+            "id": "1c43075b1fab4670",
+            "type": "switch",
+            "z": "8f6e4fae9d429e97",
+            "name": "CHECK DECRYPTION",
+            "property": "payload.plaintext",
+            "propertyType": "msg",
+            "rules": [
+                {
+                    "t": "nempty"
+                },
+                {
+                    "t": "empty"
+                }
+            ],
+            "checkall": "true",
+            "repair": false,
+            "outputs": 2,
+            "x": 950,
+            "y": 500,
+            "wires": [
+                [
+                    "c36edc9f754de462"
+                ],
+                [
+                    "55e93c1f41d71135"
+                ]
+            ]
+        },
+        {
+            "id": "55e93c1f41d71135",
+            "type": "change",
+            "z": "8f6e4fae9d429e97",
+            "name": "SET RES",
+            "rules": [
+                {
+                    "t": "set",
+                    "p": "payload",
+                    "pt": "msg",
+                    "to": "{\"error\":\"Invalid Decryption Key Error!\"}",
+                    "tot": "json"
+                }
+            ],
+            "action": "",
+            "property": "",
+            "from": "",
+            "to": "",
+            "reg": false,
+            "x": 1140,
+            "y": 520,
+            "wires": [
+                [
+                    "42ebbaeee7aecde6"
+                ]
+            ]
+        },
+        {
+            "id": "f8471e6432632d1e",
+            "type": "subflow:e3da048308d061cd",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "x": 590,
+            "y": 420,
+            "wires": [
+                [
+                    "3d9c09c046da5a0b"
+                ]
+            ]
+        },
+        {
+            "id": "d5aac35763954c3f",
+            "type": "subflow:e3da048308d061cd",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "env": [
+                {
+                    "name": "function",
+                    "value": "decrypt",
+                    "type": "str"
+                }
+            ],
+            "x": 750,
+            "y": 500,
+            "wires": [
+                [
+                    "1c43075b1fab4670"
+                ]
+            ]
+        },
+        {
+            "id": "31cf28e8557bbb0a",
+            "type": "json",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "property": "payload",
+            "action": "obj",
+            "pretty": false,
+            "x": 910,
+            "y": 580,
+            "wires": [
+                [
+                    "f32b20fd0e86d3c0"
+                ]
+            ]
+        },
+        {
+            "id": "f32b20fd0e86d3c0",
+            "type": "change",
+            "z": "8f6e4fae9d429e97",
+            "name": "SET KEY",
+            "rules": [
+                {
+                    "t": "move",
+                    "p": "key",
+                    "pt": "msg",
+                    "to": "payload.key",
+                    "tot": "msg"
+                }
+            ],
+            "action": "",
+            "property": "",
+            "from": "",
+            "to": "",
+            "reg": false,
+            "x": 600,
+            "y": 500,
+            "wires": [
+                [
+                    "d5aac35763954c3f"
+                ]
+            ]
+        },
+        {
+            "id": "c36edc9f754de462",
+            "type": "change",
+            "z": "8f6e4fae9d429e97",
+            "name": "SET RES",
+            "rules": [
+                {
+                    "t": "move",
+                    "p": "payload.plaintext",
+                    "pt": "msg",
+                    "to": "payload",
+                    "tot": "msg"
+                }
+            ],
+            "action": "",
+            "property": "",
+            "from": "",
+            "to": "",
+            "reg": false,
+            "x": 1140,
+            "y": 480,
+            "wires": [
+                [
+                    "42ebbaeee7aecde6"
+                ]
+            ]
+        },
+        {
+            "id": "1d8543451ad34c13",
+            "type": "function",
+            "z": "8f6e4fae9d429e97",
+            "name": "SET FILE",
+            "func": "msg.filename = env.get('path') + \"/\" + msg.payload.filename;\nmsg.key = msg.payload.key\nreturn msg;",
+            "outputs": 1,
+            "noerr": 0,
+            "initialize": "",
+            "finalize": "",
+            "libs": [],
+            "x": 620,
+            "y": 240,
+            "wires": [
+                [
+                    "929875524c256cb1"
+                ]
+            ]
+        },
+        {
+            "id": "3d9c09c046da5a0b",
+            "type": "function",
+            "z": "8f6e4fae9d429e97",
+            "name": "SET FILE",
+            "func": "msg.filename = env.get('path') + \"/\" + msg.payload.filename;\nmsg.payload = {\n    ciphertext:msg.payload.ciphertext\n    \n}\nreturn msg;",
+            "outputs": 1,
+            "noerr": 0,
+            "initialize": "",
+            "finalize": "",
+            "libs": [],
+            "x": 740,
+            "y": 420,
+            "wires": [
+                [
+                    "e9b47807eae52aac"
+                ]
+            ]
+        },
+        {
+            "id": "60805e6025d9ae09",
+            "type": "function",
+            "z": "8f6e4fae9d429e97",
+            "name": "SET FILE",
+            "func": "msg.filename = env.get('path') + \"/\" + msg.payload.filename;\nmsg.key = msg.payload.key\nreturn msg;",
+            "outputs": 1,
+            "noerr": 0,
+            "initialize": "",
+            "finalize": "",
+            "libs": [],
+            "x": 600,
+            "y": 580,
+            "wires": [
+                [
+                    "ea43cb9b1d8bd51c"
+                ]
+            ]
+        },
+        {
+            "id": "91275831ec5bf2dd",
+            "type": "http in",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "url": "/encrypt",
+            "method": "post",
+            "upload": false,
+            "swaggerDoc": "",
+            "x": 190,
+            "y": 720,
+            "wires": [
+                [
+                    "173d9374f8b10bec"
+                ]
+            ]
+        },
+        {
+            "id": "24d812b479079e38",
+            "type": "subflow:fda40ddd2560b63d",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "x": 590,
+            "y": 700,
+            "wires": [
+                [
+                    "9246dce3aef3cfb8"
+                ]
+            ]
+        },
+        {
+            "id": "173d9374f8b10bec",
+            "type": "switch",
+            "z": "8f6e4fae9d429e97",
+            "name": "CIPHER TYPE",
+            "property": "payload.type",
+            "propertyType": "msg",
+            "rules": [
+                {
+                    "t": "eq",
+                    "v": "AES",
+                    "vt": "str"
+                },
+                {
+                    "t": "eq",
+                    "v": "Rabbit",
+                    "vt": "str"
+                }
+            ],
+            "checkall": "true",
+            "repair": false,
+            "outputs": 2,
+            "x": 400,
+            "y": 720,
+            "wires": [
+                [
+                    "24d812b479079e38"
+                ],
+                [
+                    "f945a0a2f8c68604"
+                ]
+            ]
+        },
+        {
+            "id": "f945a0a2f8c68604",
+            "type": "subflow:e3da048308d061cd",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "x": 590,
+            "y": 740,
+            "wires": [
+                [
+                    "9246dce3aef3cfb8"
+                ]
+            ]
+        },
+        {
+            "id": "9246dce3aef3cfb8",
+            "type": "http response",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "statusCode": "",
+            "headers": {},
+            "x": 930,
+            "y": 760,
+            "wires": []
+        },
+        {
+            "id": "106759b3384582d9",
+            "type": "http in",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "url": "/decrypt",
+            "method": "post",
+            "upload": false,
+            "swaggerDoc": "",
+            "x": 190,
+            "y": 800,
+            "wires": [
+                [
+                    "ed3738cbda347048"
+                ]
+            ]
+        },
+        {
+            "id": "cbcfcb5f53e40629",
+            "type": "subflow:fda40ddd2560b63d",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "env": [
+                {
+                    "name": "function",
+                    "value": "decrypt",
+                    "type": "str"
+                }
+            ],
+            "x": 590,
+            "y": 780,
+            "wires": [
+                [
+                    "9246dce3aef3cfb8"
+                ]
+            ]
+        },
+        {
+            "id": "ab152baf1ec99c8a",
+            "type": "subflow:e3da048308d061cd",
+            "z": "8f6e4fae9d429e97",
+            "name": "",
+            "env": [
+                {
+                    "name": "function",
+                    "value": "decrypt",
+                    "type": "str"
+                }
+            ],
+            "x": 590,
+            "y": 820,
+            "wires": [
+                [
+                    "9246dce3aef3cfb8"
+                ]
+            ]
+        },
+        {
+            "id": "ed3738cbda347048",
+            "type": "switch",
+            "z": "8f6e4fae9d429e97",
+            "name": "CIPHER TYPE",
+            "property": "payload.type",
+            "propertyType": "msg",
+            "rules": [
+                {
+                    "t": "eq",
+                    "v": "AES",
+                    "vt": "str"
+                },
+                {
+                    "t": "eq",
+                    "v": "Rabbit",
+                    "vt": "str"
+                }
+            ],
+            "checkall": "true",
+            "repair": false,
+            "outputs": 2,
+            "x": 400,
+            "y": 800,
+            "wires": [
+                [
+                    "cbcfcb5f53e40629"
+                ],
+                [
+                    "ab152baf1ec99c8a"
+                ]
+            ]
+        }
+    ]
+}
