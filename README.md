@@ -27,7 +27,7 @@ The __plaintext__ payload can be either a string or an object, you must define t
 
 ---
 
-### Cipher Encrypt Response :lock: :back: 
+### Cipher Encrypt Result :lock: :back: 
 * Encryption response payload:
 
 ![CE2](docs/CE2.PNG)
@@ -41,7 +41,7 @@ The __plaintext__ payload can be either a string or an object, you must define t
 
 ---
 
-### Cipher Decrypt Response :unlock: :back: 
+### Cipher Decrypt Result :unlock: :back: 
 * Decryption response payload:
 
 ![DE2](docs/DE2.PNG)
@@ -66,7 +66,7 @@ You firstly need to define the __path__ of the store in the properties of the su
 
 ---
 
-### Store Encrypt Response :lock:  :back: :toolbox: 
+### Store Encrypt Result :lock:  :back: :toolbox: 
 * Store encryption response payload:
 
 ![CSB2](docs/CSB2.PNG)
@@ -80,7 +80,7 @@ You firstly need to define the __path__ of the store in the properties of the su
 
 ---
 
-### Store Decrypt Response :unlock: :back: :toolbox: 
+### Store Decrypt Result :unlock: :back: :toolbox: 
 * Store decryption response payload:
 
 ![DSB2](docs/DSB2.PNG)
