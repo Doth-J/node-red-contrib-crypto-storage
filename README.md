@@ -1,4 +1,4 @@
-node-red-contrib-crypto-storage :package: 
+# node-red-contrib-crypto-storage :package: 
 ---
 
 This is a subflow node for encrypting / decrypting payloads, creating an encrypted store on the specified folder utiling AES for block and Rabbit for stream ciphering.
