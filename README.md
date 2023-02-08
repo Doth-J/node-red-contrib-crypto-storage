@@ -12,6 +12,10 @@ Run the following command in your Node-RED user directory - typically `~/.node-r
 This subflow provides functionalities cipher functionalities for preserving the confidentiality of payloads.
 
 ## Cipher API :closed_lock_with_key:
+
+- Encrypt: **POST localhost:1880/encrypt** 
+- Decrypt: **POST localhost:1880/decrypt** 
+- 
 The __plaintext__ payload can be either a string or an object, you must define the __function__ to use (``encrypt``/``decrypt``), the cipher __key__ and the __type__ of cipher to use (``AES``*/Block Cipher* or ``Rabbit``*/Stream Cipher*).
 
 :warning: In the case of ``AES``, the __mode__ (``CBC/CFB/OFB/CTR``) parameter must also be set!    
@@ -47,6 +51,10 @@ The __plaintext__ payload can be either a string or an object, you must define t
 ![DE2](docs/DE2.PNG)
 
 ## Cipher Store API :toolbox:
+
+- AES: **POST localhost:1880/blockStore** 
+- Rabbit: **POST localhost:1880/streamStore**
+-  
 The __plaintext__ payload can be either a string or an object, you must define the __function__ to use (``encrypt``/``decrypt``), the cipher __key__ and the __filename__ of the crypto storage. 
 
 ![CipherStoreAPI](docs/CipherStoreAPI.PNG)
