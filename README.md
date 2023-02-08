@@ -13,8 +13,8 @@ This subflow provides functionalities cipher functionalities for preserving the 
 
 ## Cipher API :closed_lock_with_key:
 
-- Encrypt: **POST localhost:1880/encrypt** 
-- Decrypt: **POST localhost:1880/decrypt** 
+- :arrow_right: Encrypt: **POST localhost:1880/encrypt** 
+- :arrow_right: Decrypt: **POST localhost:1880/decrypt** 
   
 The __plaintext__ payload can be either a string or an object, you must define the __function__ to use (``encrypt``/``decrypt``), the cipher __key__ and the __type__ of cipher to use (``AES``*/Block Cipher* or ``Rabbit``*/Stream Cipher*).
 
@@ -52,8 +52,8 @@ The __plaintext__ payload can be either a string or an object, you must define t
 
 ## Cipher Store API :toolbox:
 
-- AES: **POST localhost:1880/blockStore** 
-- Rabbit: **POST localhost:1880/streamStore**
+- :arrow_right: AES: **POST localhost:1880/blockStore** 
+- :arrow_right: Rabbit: **POST localhost:1880/streamStore**
    
 The __plaintext__ payload can be either a string or an object, you must define the __function__ to use (``encrypt``/``decrypt``), the cipher __key__ and the __filename__ of the crypto storage. 
 
