@@ -1,6 +1,5 @@
 # node-red-contrib-crypto-storage :package: 
 
-## Information :information_source:
 This is a subflow node for encrypting / decrypting payloads and creating encrypted stores on the specified folder utilizing AES for Block Ciphering and Rabbit for Stream Ciphering preserving the confidentiality of payloads.
 
 ## Install :zap:
@@ -10,8 +9,8 @@ Run the following command in your Node-RED user directory - typically `~/.node-r
 
 ## Cipher API :closed_lock_with_key:
 
-- :arrow_right: Encrypt: **POST localhost:1880/encrypt** 
-- :arrow_right: Decrypt: **POST localhost:1880/decrypt** 
+- :information_source: Encrypt: **POST localhost:1880/encrypt** 
+- :information_source: Decrypt: **POST localhost:1880/decrypt** 
   
 The __plaintext__ payload can be either a string or an object, you must define the __function__ to use (``encrypt``/``decrypt``), the cipher __key__ and the __type__ of cipher to use (``AES``*/Block Cipher* or ``Rabbit``*/Stream Cipher*).
 
@@ -49,8 +48,8 @@ The __plaintext__ payload can be either a string or an object, you must define t
 
 ## Cipher Store API :toolbox:
 
-- :arrow_right: AES: **POST localhost:1880/blockStore** 
-- :arrow_right: Rabbit: **POST localhost:1880/streamStore**
+- :information_source: AES: **POST localhost:1880/blockStore** 
+- :information_source: Rabbit: **POST localhost:1880/streamStore**
    
 The __plaintext__ payload can be either a string or an object, you must define the __function__ to use (``encrypt``/``decrypt``), the cipher __key__ and the __filename__ of the crypto storage. 
 
